@@ -1,0 +1,26 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Bitcoin tool
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Justin
+    family-names: Ruiter
+repository-code: 'https://github.com/Sjustein/rp-bitcoin-tool'
+abstract: >-
+  This tool was created for generating a dataset for
+  'Understanding money flow in ransomware' and expands the
+  ransomwhe.re dataset by adding victim deposit transactions
+  and stakeholder split transactions.
+keywords:
+  - ransomware
+  - ransomwhe.re
+  - bitcoin
+  - blockchain
+  - RaaS
+  - stakeholders
+license: GPL-3.0
