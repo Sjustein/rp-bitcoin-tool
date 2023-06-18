@@ -18,7 +18,6 @@ print("Database connected and cleaned")
 
 api = Ransomwhere(db.getConnection())
 api.importData()
-print("Ransomwhere data imported")
 
 explorer.threads = 256
 explorer.collectVictimSources()
