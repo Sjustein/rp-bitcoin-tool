@@ -1,0 +1,3 @@
+- [ ] Add all secrets and configuration parameters to a configuration file
+- [ ] Parse blockchain.info rate limit headers (if exists)
+- [ ] Improve code quality
