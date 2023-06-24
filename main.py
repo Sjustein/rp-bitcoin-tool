@@ -12,14 +12,14 @@ blockchaininfo = BlockchainInfo()
 explorer = Bitcoinexplorer(db.getConnection(), blockchaininfo)
 processing = Processing(db.getConnection(), explorer)
 
-db.cleanData()
 processing.validateTransactionCache()
+db.cleanData()
 print("Database connected and cleaned")
 
 api = Ransomwhere(db.getConnection())
 api.importData()
 
-explorer.threads = 256
+explorer.threads = 64
 explorer.collectVictimSources()
 print("Victim addresses enriched with address information")
 
@@ -30,9 +30,9 @@ print("Victim addresses enriched with transactions")
 explorer.gatherTransactionsFromAttackers()
 processing.propegateVictimFailed()
 
-if not processing.checkUniqueRansomAddresses():
+if not processing.hasUniqueRansomAddresses():
     print(
-        "Error: this script is designed to work with a list of unique ransom addresses, but there are multiple entries per address for some ransom addresses.")
+        "Error: this script is designed to work with a list of unique ransom addresses, but there are multiple entries per address for some ransom addresses. Exiting...")
     exit(4)
 
 processing.fillTransactionCounts()
@@ -40,6 +40,10 @@ processing.fillAttackerBalanceLeft()
 processing.fillStakeholderSplitPercentage()
 
 print("Attacker statistics calculated")
+
+print("------------------------------------------------------------------------")
+print("Statistics overview, NOT FINAL:")
+print("------------------------------------------------------------------------")
 
 attackerStats = Attackers(db.getConnection())
 attackerStats.getSimpleCases()
@@ -61,5 +65,17 @@ victimStats.printHolderStatistics()
 
 # Determine the time between funds being deposited and ransom payment
 processing.determineTimeDeltaDepositPayment(victimSCases)
+
+print("------------------------------------------------------------------------")
+print("Final statistics:")
+print("------------------------------------------------------------------------")
+
+attackerStats = Attackers(db.getConnection())
+attackerStats.getSimpleCases()
+
+victimStats = Victims(db.getConnection())
+victimSCases = victimStats.getCases()
+victimStats.printHolderStatistics()
+
 
 print("\nScript finished, dataset is complete")

@@ -93,14 +93,14 @@ class Victims:
             "SELECT SUM(CASE WHEN \"Raas\" = True THEN 1 ELSE 0 END) AS RaaS, SUM(CASE WHEN \"Raas\" = True THEN 0 ELSE 1 END) AS NonRaaS FROM \"RansomTransactions\" "
             "LEFT JOIN \"RansomData\" ON \"RansomTransactions\".\"DataId\" = \"RansomData\".\"Id\" "
             "LEFT JOIN \"RaasFamilies\" ON \"RansomData\".\"Family\" = \"RaasFamilies\".\"Family\" ")
-        raasSCStats = self.cursor.fetchall()[0]
+        raasStats = self.cursor.fetchall()[0]
 
         self.cursor.execute(
             "SELECT SUM(CASE WHEN \"Raas\" = True THEN 1 ELSE 0 END) AS RaaS, SUM(CASE WHEN \"Raas\" = True THEN 0 ELSE 1 END) AS NonRaaS FROM \"RansomTransactions\" "
             "LEFT JOIN \"RansomData\" ON \"RansomTransactions\".\"DataId\" = \"RansomData\".\"Id\" "
             "LEFT JOIN \"RaasFamilies\" ON \"RansomData\".\"Family\" = \"RaasFamilies\".\"Family\" "
             "WHERE \"FailedVictims\" = FALSE AND \"SourceIsHolder\" IS NOT NULL;")
-        raasStats = self.cursor.fetchall()[0]
+        raasSCStats = self.cursor.fetchall()[0]
 
         print("----------- Raas statistics")
         print("Ransom cases with RaaS data: " + str(raasData[1]) + " victim payments ({:3.2f}%)".format(

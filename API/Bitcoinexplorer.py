@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 
 import requests
 import orjson
@@ -470,7 +471,6 @@ class Bitcoinexplorer:
         while True:
             try:
                 addressEntry = addressQueue.get(timeout=5)
-                print(addressQueue.qsize())
             except Empty:
                 return
             else:
@@ -484,8 +484,10 @@ class Bitcoinexplorer:
                     addressQueue.task_done()
                     continue
 
-                for t in range(len(address["txHistory"]["txids"])):
-                    transactionQueue.put((addressEntry[0], address["txHistory"]["txids"][t]))
+                # TODO: move this to the configuration file
+                if len(address["txHistory"]["txids"]) <= 100:
+                    for t in range(len(address["txHistory"]["txids"])):
+                        transactionQueue.put((addressEntry[0], address["txHistory"]["txids"][t]))
 
                 addressQueue.task_done()
 
@@ -616,9 +618,9 @@ class Bitcoinexplorer:
                             if addressEntry[0] is None:
                                 print("NONE: " + addressEntry[0])
 
-                            cursor.execute("EXECUTE insertstakeholder (%s, %s, %s, %s, %s)", (
+                            cursor.execute("EXECUTE insertstakeholder (%s, %s, %s, %s, %s, %s)", (
                                 addressEntry[0], transaction["vout"][a]["scriptPubKey"]["address"],
-                                transaction["vout"][a]["value"], transaction["time"], address["txHistory"]["txids"][t]))
+                                transaction["vout"][a]["value"], transaction["time"], address["txHistory"]["txids"][t], datetime.fromtimestamp(transaction["time"]).strftime('%c')))
 
                 if succes:
                     conn.commit()
@@ -648,7 +650,7 @@ class Bitcoinexplorer:
             cursor = conn.cursor()
 
             cursor.execute("PREPARE insertstakeholder AS "
-                           "INSERT INTO \"StakeholderOutputs\" (\"AttackerAddress\", \"StakeholderAddress\", \"Amount\", \"Time\", \"TransactionHash\") VALUES ($1, $2, $3, $4, $5);")
+                           "INSERT INTO \"StakeholderOutputs\" (\"AttackerAddress\", \"StakeholderAddress\", \"Amount\", \"Time\", \"TransactionHash\", \"ConvertedTime\") VALUES ($1, $2, $3, $4, $5, $6);")
 
             curThread = Thread(
                 target=self.gatherStakeholderTransactionsThread,

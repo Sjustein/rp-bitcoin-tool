@@ -1,6 +1,7 @@
 import orjson
 from decimal import *
 
+
 class Processing:
     conn = None
     cursor = None
@@ -34,14 +35,15 @@ class Processing:
             allTransactions = []
 
             for entry in OutTransactions:
-                entry["Amount"] = Decimal(str(entry["Amount"]))*Decimal(-1)
+                entry["Amount"] = Decimal(str(entry["Amount"])) * Decimal(-1)
                 allTransactions.append(entry)
 
             for entry in InTransactions:
                 entry["Amount"] = Decimal(str(entry["Amount"]))
                 allTransactions.append(entry)
 
-            allTransactions = sorted(allTransactions, key=lambda val: (val["Blockheight"], val["Blockorder"]), reverse=True)
+            allTransactions = sorted(allTransactions, key=lambda val: (val["Blockheight"], val["Blockorder"]),
+                                     reverse=True)
 
             balance = None
             depositTime = 0
@@ -158,7 +160,7 @@ class Processing:
 
         return misMatches
 
-    def checkUniqueRansomAddresses(self):
+    def hasUniqueRansomAddresses(self):
         self.cursor.execute(
             "SELECT COUNT(*) AS Addresses, count(DISTINCT \"Address\") AS UniqueAddresses FROM \"RansomData\";")
         res = self.cursor.fetchall()
@@ -277,7 +279,8 @@ class Processing:
         notHundredPercent = self.cursor.fetchall()[0][0]
 
         if notHundredPercent != 0:
-            print(str(notHundredPercent) + " ransom attacks do not add stakeholder outputs and balance left in the account to 100%. Exiting...")
+            print(
+                str(notHundredPercent) + " ransom attacks do not add stakeholder outputs and balance left in the account to 100%. Exiting...")
             exit(6)
 
         # Verify that the amount left in the account is equal to the BalanceBTCLeftAfterStakeholders
@@ -290,7 +293,8 @@ class Processing:
             # Verify that the amount left according to the internal calculations is equal to the actual amount left in the address
             addr = self.explorer.findAddressOrCache(row[0], self.conn)
 
-            balanceBTC = Decimal(str(addr["txHistory"]["balanceSat"]/100000000))
+            balanceBTC = Decimal(str(addr["txHistory"]["balanceSat"] / 100000000))
             if balanceBTC != row[1]:
-                print("Calculated amount left in the address is not equal to the actual amount left in the address: " + row[0] + ". Exiting...")
+                print("Calculated amount left in the address is not equal to the actual amount left in the address: " +
+                      row[0] + ". Exiting...")
                 exit(7)

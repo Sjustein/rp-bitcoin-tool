@@ -32,12 +32,11 @@ class Attackers:
         for i in range(len(addresses)):
             # There are no outbound transactions, but there are inbound transactions
             if addresses[i][1] == 0 and addresses[i][2] > 0:
-                print(addresses[i][0])
                 noCashOut += 1
             # There are no inbound transactions
             elif addresses[i][2] == 0:
                 notPaid += 1
-            elif addresses[i][1] + addresses[i][2] == 2:
+            elif addresses[i][1] + addresses[i][2] == 2 and addresses[i][2] == 1:
                 simpleCases.append(addresses[i])
 
         print("\nAttacker statistics:")
@@ -47,8 +46,8 @@ class Attackers:
         print("Ransom not paid in " + str(notPaid) + " addresses ({:3.2f}%)".format((notPaid / total) * 100))
         print(
             "Simple case: " + str(len(simpleCases)) + " addresses ({:3.2f}%)".format((len(simpleCases) / total) * 100))
-        print("Extended case: " + str(total - noCashOut - notPaid - len(simpleCases)) + " addresses ({:3.2f}%)".format(
-            ((total - noCashOut - notPaid - len(simpleCases)) / total) * 100))
+        print("Extended case: " + str(total - noCashOut - notPaid - len(simpleCases) - failed) + " addresses ({:3.2f}%)".format(
+            ((total - noCashOut - notPaid - len(simpleCases) - failed) / total) * 100))
 
         # Print RaaS statistics
         cursor.execute(
@@ -59,10 +58,10 @@ class Attackers:
         cursor.execute(
             "SELECT SUM(CASE WHEN \"Raas\" = True THEN 1 ELSE 0 END) AS RaaS, SUM(CASE WHEN \"Raas\" = True THEN 0 ELSE 1 END) AS NonRaaS FROM \"RansomData\" "
             "LEFT JOIN \"RaasFamilies\" ON \"RansomData\".\"Family\" = \"RaasFamilies\".\"Family\";")
-        raasSCStats = cursor.fetchall()[0]
+        raasStats = cursor.fetchall()[0]
 
         cursor.execute(
-            "SELECT SUM(CASE WHEN \"Raas\" = True THEN 1 ELSE 0 END) AS RaaS, SUM(CASE WHEN \"Raas\" = True THEN 0 ELSE 1 END) AS RaaS FROM \"RansomData\" "
+            "SELECT SUM(CASE WHEN \"Raas\" = True THEN 1 ELSE 0 END) AS NonRaaS, SUM(CASE WHEN \"Raas\" = True THEN 0 ELSE 1 END) AS RaaS FROM \"RansomData\" "
             "LEFT JOIN \"RaasFamilies\" ON \"RansomData\".\"Family\" = \"RaasFamilies\".\"Family\" "
             "LEFT JOIN ("
             "    SELECT DISTINCT \"RansomData\".\"Address\", COALESCE(SUM(OutTransactionCount), 0) AS OutTransactions, COALESCE(SUM(ITC.InTransactionCount), 0) AS InTransactions FROM \"RansomData\""
@@ -72,7 +71,7 @@ class Attackers:
             "    GROUP BY \"RansomData\".\"Address\""
             "    HAVING count(*) = 1) AS tStats ON \"RansomData\".\"Address\" = tStats.\"Address\" "
             "WHERE \"Failed\" = FALSE AND tStats.OutTransactions <> 0 AND NOT (tStats.OutTransactions = 0 AND tStats.OutTransactions > 0) AND tStats.OutTransactions + tStats.InTransactions = 2;")
-        raasStats = cursor.fetchall()[0]
+        raasSCStats = cursor.fetchall()[0]
 
         print("----------- Raas statistics")
         print("Ransom cases with RaaS data: " + str(raasData[1]) + " addresses ({:3.2f}%)".format(

@@ -1,0 +1,2 @@
+- Parse blockchain.info rate limit headers (if exists)
+- Improve code quality

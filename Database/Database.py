@@ -41,6 +41,7 @@ class Database:
         self.cursor.execute("TRUNCATE \"RansomTransactions\";")
         self.cursor.execute("TRUNCATE \"DepositTransactions\";")
         self.cursor.execute("TRUNCATE \"StakeholderOutputs\";")
+        self.cursor.execute("TRUNCATE \"VictimAddresses\";")
         self.cursor.execute("TRUNCATE \"RaasFamilies\";")
         self.conn.commit()
         self.cursor.close()

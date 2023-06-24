@@ -1,5 +1,9 @@
 # rp-tool-python
-Note: this is an initial and work in progress version of the tool. The tool is far from polished (see ROADMAP.md)
+Note: this is an initial and work in progress version of the tool. The tool is far from polished (see ROADMAP.md) and the code quality is not something to be proud of, but should produce a reliable dataset. This dataset has already been used in a paper investigating money flow in ransomware attacks.
+
+Limitation: the code, as it is currently, cannot handle more than 100 transactions for victim addresses. Because of the way statistics are calculated, postgresql exceeds hard coded memory limits, with modification, this limit can easily be lifted.
+
+A different limitation is that it is not possible to differentiate between a personal address that has had a lot of activity before the ransom payment and a shared address. This could partially be solved by adding a lookup table to the dataset with shared addresses that belong to certain bitcoin exchanges. This would take a lot of time however, as not all exchanges publish this data and because of the global nature of ransomware attacks, a lot of exchanges would need to be added to this dataset. As determining whether a victim was already active in trading bitcoin before the ransom payment is not a primary objective of this research, collecting this data was not pursued. The prediction of whether a victim is a prior bitcoin holder is not considered reliable and is thus not used for this research.
 
 ## System requirements
 ### Minimum specs
@@ -101,20 +105,21 @@ Create a database and user for the script:
 After that, create the database schema with the createschema.sql file.
 
 Please update the user, database and host configuration in Database/Database.py.
-**Note:** after testing, the database, including data and cache used between 50 and 70GB of disk space. Increasing the limits set in the code and in the electrum server will increase this usage up till 500+GB's.
+**Note:** after testing, the database, including data and cache used between 50 and 70GB of disk space (limiting victim transactions at 50 transactions per address). Increasing the limits set in the code and in the electrum server will increase this usage up till 500+GB's (with a limit of 5000 transactions per address).
+**Speed:** the postgresql server can easily be bottlenecked by disk speed, especially when a lot of cache requests are hits in the import process. It is advised to place the data directory of the postgresql server on fast NVME storage.
 
 ### Time required
 - Synchronising the bitcoin blockchain took around 8-10 hours.
 - Building the electrs cache took around 4-5 hours.
-- First run of the script: 12 - 36 hours (limited to 50 transactions per address).
+- First run of the script: 12 - 24 hours (limited to 50 transactions per address).
 - Subsequent runs using cache: < 60 minutes (depending on the limited transactions and postgresql server speed and latency).
 
 All tools must be fully synchronised and cannot sync in parallel.
 
 ### Startup tools
 - On windows, bitcoin-core can automatically start the server when it is started and will automatically use the configuration file in the specified directory. If not using the bitcoin-core gui tool, ensure to use the created configuration file.
-- Electrs should be set to only handle requests for addresses with 50 transactions or less, unless your purpose requires larger addresses to be processed as well. As electrs can take a lot of time to gather the entire address, especially with higher transaction counts, the amount of threads during the queueVictimAddressTransactions() function should be lowered accordingly, as to not 'stall' electrs or bitcoin explorer. 
-  - This limitation can be enforced by starting electrs with the following command: electrs --index-batch-size=512 --index-lookup-limit=50 --ignore-mempool. Memory pool transactions are not needed, as the data in the ransomwhe.re dataset is at least 90 days old.
+- Electrs should be set to only handle requests for addresses with 100 transactions or less, unless your purpose requires larger addresses to be processed as well. As electrs can take a lot of time to gather the entire address, especially with higher transaction counts, the amount of threads during the queueVictimAddressTransactions() function should be lowered accordingly, as to not 'stall' electrs or bitcoin explorer. 
+  - This limitation can be enforced by starting electrs with the following command: electrs --index-batch-size=512 --index-lookup-limit=100 --ignore-mempool. Memory pool transactions are not needed, as the data in the ransomwhe.re dataset is at least 90 days old.
   - Make sure electrs can find the configuration file and using the configuration provided by it.
 - Start btc-rpc-explorer in the directory that contains its environment file and provide the path to the bitcoin core cookie file to authenticate with bitcoin core
   - Use the following command to achieve this: btc-rpc-explorer -c C:\PATH\TO\.cookie
@@ -128,10 +133,8 @@ The script will adhere to the rate limits provided by bitcoin.info, which might 
 - The data tables will be cleared on startup by default. The first run will take between 24 and 48 hours to fill the cache and data tables, but after the first run, the program should finish in under 60 minutes, using its cache. However, the actual speed depends on your hardware and the limits set in the code and in the electrum server.
 - After that, the ransomwhe.re dataset will be downloaded and inserted in the 'RansomData' and 'RansomTransactions' tables.
 - This data will be used to fill the 'VictimAddresses' table, containing a list of addresses, related ransom payment transaction id and addition infered metadata (inserted later in the script).
-- After that, all transactions in victim addresses that have less than 50 transactions are looked up and cached. All found transactions are stored in the 'DepositTransactions' table.
+- After that, all transactions in victim addresses that have less than 100 transactions are looked up and cached. All found transactions are stored in the 'DepositTransactions' table.
 - Then, all addresses and transactions from attacker wallets are looked up, cached and stored in the 'StakeholderOutputs' table.
 - As a final step, additional infered data is added to these tabled. This step can be expanded upon easily by updating the script and updating the database.
 
-**Data accuracy:** If any transactions fail to properly import, their id will be printed in the console. Nothing should be printed for the data to be reliable.
-The script is tested to use the blockchaininfo API as a fallback and no transactions should fail to import.
-Every failed address or transaction will be printed to the standard output as well. Addresses are expected not to properly import if they contain more than the amount of transactions set in the code and the electrum server.
+**Fallback:** The script is tested to use the blockchaininfo API as a fallback and no transactions should fail to import.
